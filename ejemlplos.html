@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classical AI Search Strategies Visualizer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0f172a;
+      color: #f8fafc;
+    }
+    .font-heading {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+  </style>
+
+  <style id="girly-theme">
+  :root {color-scheme:light}
+  body {background:linear-gradient(135deg,#fff6f9 0%,#fffafd 50%,#f7f0ff 100%)!important;color:#91346f!important;font-family:Inter,sans-serif}
+  body::before{content:'✦     ♡       ✧     ♡';position:absolute;top:9px;right:20%;color:#e7a2ca;letter-spacing:28px;pointer-events:none}
+  header{max-width:none!important;padding:15px 12px 25px;border-bottom:1px solid #f4d7e8}
+  header h1{font-family:Georgia,serif!important;color:#9c245d!important;font-size:clamp(26px,3vw,40px)!important}
+  header p{color:#a269aa!important}
+  header>div:first-child>div:first-child{background:#ffe6f1!important;color:#b73c85!important;border-color:#f3bed8!important}
+  header>div:first-child>div:first-child::before{content:'🎀 ';font-size:19px}
+  header button{background:#fff0f8!important;color:#a74c93!important;border:1px solid #e6a7d3!important;box-shadow:0 3px 10px #eac1d333!important}
+  header #exportGifBtn,header #exportVideoBtn{background:linear-gradient(115deg,#e56ba9,#c98bda)!important;color:white!important}
+  .girly-layout{max-width:1800px!important;align-items:start}
+  .girly-layout>section,.girly-right>.girly-info{background:#fff6fae8!important;border:1px solid #f5cfe0!important;border-radius:18px!important;box-shadow:0 8px 24px #d99cbe18!important}
+  .girly-layout>section{min-width:0}
+  .girly-sidebar label{color:#bd438b!important}
+  .girly-sidebar label::before{content:'♡ ';color:#e778b1}
+  .girly-sidebar .bg-slate-950,.girly-sidebar select{background:#fff1f8!important;border-color:#f2c5dc!important;color:#984b94!important}
+  .girly-sidebar button{background:#fff1f8!important;color:#a24591!important;border:1px solid #edbdd8!important}
+  .girly-sidebar #btnBlind,.girly-sidebar #btnHeuristic,.girly-sidebar #btnPlay{border-radius:12px!important}
+  .girly-sidebar #btnPlay{background:linear-gradient(120deg,#e678b4,#d75b9d)!important;color:white!important}
+  .girly-sidebar .text-slate-400,.girly-sidebar .text-slate-300{color:#95629e!important}
+  .girly-sidebar .border-slate-800{border-color:#f0cddd!important}
+  .girly-sidebar #metricVisited{color:#bc65bd!important}.girly-sidebar #metricSteps{color:#d75b9d!important}
+  .girly-sidebar input[type=range]{accent-color:#e16cab}
+  .girly-center{background:#fff9fc!important}
+  .girly-center #modeBadge{background:#fce0ee!important;color:#b83c8a!important;border:1px solid #f5c5dd!important}
+  .girly-center #statusText{color:#a85a9b!important}
+  .girly-center #btnNewGraph{background:#fff0f7!important;color:#a54a94!important;border:1px solid #f3c6dd!important}
+  .girly-center canvas{background:#fffafd!important}
+  .girly-center canvas.parent{background:#fffafd!important}
+  .girly-center .relative:has(>canvas){background:#fffafd!important;border:1px solid #f3d7e7!important}
+  .girly-center .mt-4.p-3{background:#fff1f8!important;border-color:#f4d1e4!important;color:#995b96!important}
+  .execution-log{margin-top:16px;background:#fff1f7;border:1px solid #f4d0e2;border-radius:13px;padding:12px;color:#b7488d}
+  .execution-log h3{font-weight:700;margin-bottom:9px}.execution-log>div{background:#fffafd;border:1px solid #f6d8e8;border-radius:9px;padding:12px;height:115px;overflow:auto;font:12px/1.8 monospace;color:#9662b3}
+  .girly-right{display:flex;flex-direction:column;gap:18px}
+  .girly-info{padding:17px}.girly-info h2{font-size:17px;font-weight:700;color:#c24b91;margin-bottom:15px}
+  .info-tile{background:#ffeaf3;border:1px solid #f7d4e5;border-radius:15px;padding:17px;margin-top:12px}.info-tile.lavender{background:#f3eaff;border-color:#e7d5f5}
+  .info-tile h3{font-weight:700;color:#ae438a;margin-bottom:8px}.info-tile p{color:#9760a0;font-size:13px;line-height:1.75}
+  .settings p{padding:11px;background:#fff2f8;border-radius:10px;margin-top:7px;font-size:13px;color:#945c9b}.settings strong{color:#ba458e}
+  .girly-quote{text-align:center;color:#e276af;font-family:Georgia,serif;font-style:italic;line-height:1.9;transform:rotate(-6deg);padding:30px 0}
+  @media(max-width:1023px){.girly-layout{grid-template-columns:1fr!important}.girly-right{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}}
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-4 md:p-8">
+
+  <!-- Header -->
+  <header class="max-w-7xl w-full mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+    <div>
+      <div class="inline-flex items-center gap-2 bg-blue-950/80 text-blue-400 border border-blue-800/50 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+        <i class="fa-solid fa-diagram-project"></i> Classical AI Search Comparison
+      </div>
+      <h1 class="text-2xl md:text-3xl font-bold font-heading text-white">
+        Blind Search vs. Heuristic Search
+      </h1>
+      <p class="text-slate-400 text-sm mt-1">
+        Visualize how heuristic estimation cuts through combinatorial explosion to reach the target faster.
+      </p>
+    </div>
+
+    <!-- Download / Export Controls -->
+    <div class="flex flex-wrap gap-3">
+      <button id="exportSvgBtn" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md">
+        <i class="fa-solid fa-file-image text-amber-400"></i> Export SVG Diagram
+      </button>
+      <button id="exportGifBtn" class="flex items-center gap-2 bg-purple-700 hover:bg-purple-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md">
+        <i class="fa-solid fa-film"></i> Export GIF
+      </button>
+      <button id="exportVideoBtn" class="flex items-center gap-2 bg-rose-700 hover:bg-rose-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md">
+        <i class="fa-solid fa-video"></i> Export Video
+      </button>
+      <button id="downloadHtmlBtn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md">
+        <i class="fa-solid fa-download"></i> Save Visualizer HTML
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <main class="w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-5 flex-grow girly-layout">
+
+    <!-- Controls & Legend Panel (1 Col) -->
+    <section class="lg:col-span-3 girly-sidebar bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl backdrop-blur-sm">
+      <div class="space-y-6">
+        
+        <!-- Algorithm Selector -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Select Algorithm Type</label>
+          <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800">
+            <button id="btnBlind" class="py-2.5 px-3 rounded-lg text-sm font-bold transition-all bg-slate-800 text-white shadow-sm flex items-center justify-center gap-2">
+              <i class="fa-solid fa-eye-slash text-slate-400"></i> Blind Search
+            </button>
+            <button id="btnHeuristic" class="py-2.5 px-3 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2">
+              <i class="fa-solid fa-bolt text-amber-400"></i> Heuristic Search
+            </button>
+          </div>
+        </div>
+
+        <!-- Specific Variant Selector -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Strategy Variant</label>
+          <select id="algVariant" class="w-full bg-slate-950 border border-slate-800 text-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500">
+            <option value="bfs">Breadth-First Search (BFS) - Layer by Layer</option>
+            <option value="dfs">Depth-First Search (DFS) - Deep Path First</option>
+          </select>
+        </div>
+
+        <!-- Animation Controls -->
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Execution Controls</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button id="btnPlay" class="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-play"></i> Play
+            </button>
+            <button id="btnStep" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-forward-step"></i> Step
+            </button>
+            <button id="btnReset" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Speed Slider -->
+        <div>
+          <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+            <span>Simulation Speed</span>
+            <span id="speedVal" class="text-blue-400">Medium</span>
+          </div>
+          <input type="range" id="speedSlider" min="50" max="800" value="300" step="50" class="w-full accent-blue-500 bg-slate-950 rounded-lg cursor-pointer">
+        </div>
+
+        <!-- Legend -->
+        <div class="pt-4 border-t border-slate-800/80">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Node Legend</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-slate-700 border border-slate-500 inline-block"></span>
+              <span class="text-slate-300">Unexplored</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-amber-400 border border-amber-300 inline-block shadow-sm shadow-amber-400/50"></span>
+              <span class="text-slate-300">Frontier/Next</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-blue-500 border border-blue-400 inline-block shadow-sm shadow-blue-500/50"></span>
+              <span class="text-slate-300">Visited</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-emerald-400 border border-emerald-300 inline-block shadow-sm shadow-emerald-400/50"></span>
+              <span class="text-slate-300">Target (Goal)</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Live Metrics Card -->
+      <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mt-6">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Performance Metrics</div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <div class="text-2xl font-bold font-heading text-blue-400" id="metricVisited">0</div>
+            <div class="text-xs text-slate-400">Nodes Explored</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold font-heading text-emerald-400" id="metricSteps">0</div>
+            <div class="text-xs text-slate-400">Steps to Goal</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visualizer Graph Canvas (2 Cols) -->
+    <section class="lg:col-span-6 girly-center bg-slate-900/90 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-xl relative overflow-hidden">
+      
+      <!-- Graph Canvas Header -->
+      <div class="flex justify-between items-center mb-4 z-10">
+        <div class="flex items-center gap-3">
+          <span id="modeBadge" class="bg-blue-900/80 text-blue-300 border border-blue-700/50 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">
+            Blind Search Mode
+          </span>
+          <span id="statusText" class="text-xs text-slate-400 font-medium">Ready to start animation</span>
+        </div>
+        <button id="btnNewGraph" class="text-xs text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+          <i class="fa-solid fa-shuffle"></i> New Graph Grid
+        </button>
+      </div>
+
+      <!-- Interactive Canvas -->
+      <div class="w-full h-[400px] md:h-[460px] bg-slate-950 rounded-xl border border-slate-800/80 relative flex items-center justify-center overflow-hidden">
+        <canvas id="graphCanvas" class="w-full h-full block cursor-pointer"></canvas>
+      </div>
+
+      <div class="execution-log"><h3>▤ Execution Log ♡</h3><div id="executionLog" aria-live="polite">Ready to start animation...</div></div>
+      <!-- Explanatory Footer Bar -->
+      <div class="mt-4 p-3 bg-slate-950/60 border border-slate-800 rounded-xl text-xs text-slate-300 flex items-start gap-3">
+        <i class="fa-solid fa-lightbulb text-amber-400 text-base mt-0.5"></i>
+        <div id="strategyExplanation">
+          <b>Blind Search:</b> Explores nodes blindly in order of depth/breadth without knowing how close it is to the target.
+        </div>
+      </div>
+
+    </section>
+
+
+    <aside class="lg:col-span-3 girly-right">
+      <div class="girly-info">
+        <h2>✦ About the Algorithms ♡</h2>
+        <div class="info-tile"><h3>♡ Blind Search</h3><p>Explores nodes without using additional information about the goal. BFS searches layer by layer; DFS explores deeper paths first.</p></div>
+        <div class="info-tile lavender"><h3>ϟ Heuristic Search</h3><p>Uses estimates of distance to guide exploration toward the goal and prioritize promising nodes.</p></div>
+      </div>
+      <div class="girly-info settings"><h2>⚙ Current Settings</h2><p>Algorithm: <strong id="currentAlgorithm">Blind Search</strong></p><p>Variant: <strong id="currentVariant">BFS</strong></p><p>Speed: <strong id="currentSpeed">Medium</strong></p></div>
+      <p class="girly-quote">Better heuristics,<br> less exploration,<br> more progress ♡</p>
+    </aside>
+  </main>
+
+  <script>
+    // --- CANVAS & GRAPH STATE ---
+    const canvas = document.getElementById('graphCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let nodes = [];
+    let edges = [];
+    let startNode = null;
+    let targetNode = null;
+
+    let algorithmType = 'blind'; // 'blind' or 'heuristic'
+    let algorithmVariant = 'bfs'; // 'bfs', 'dfs', 'hill', 'astar'
+
+    let queueOrStack = [];
+    let visited = new Set();
+    let parentMap = new Map();
+    let finalPath = [];
+
+    let isRunning = false;
+    let isFinished = false;
+    let animationTimer = null;
+    let stepCount = 0;
+
+    // --- DOM ELEMENTS ---
+    const btnBlind = document.getElementById('btnBlind');
+    const btnHeuristic = document.getElementById('btnHeuristic');
+    const algVariant = document.getElementById('algVariant');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnStep = document.getElementById('btnStep');
+    const btnReset = document.getElementById('btnReset');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedVal = document.getElementById('speedVal');
+    const btnNewGraph = document.getElementById('btnNewGraph');
+
+    const modeBadge = document.getElementById('modeBadge');
+    const statusText = document.getElementById('statusText');
+    const strategyExplanation = document.getElementById('strategyExplanation');
+    const metricVisited = document.getElementById('metricVisited');
+    const metricSteps = document.getElementById('metricSteps');
+
+    // --- RESIZE & INITIALIZE ---
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      if (nodes.length === 0) generateGraph();
+      draw();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- GRAPH GENERATOR ---
+    function generateGraph() {
+      nodes = [];
+      edges = [];
+      resetSearchState();
+
+      const width = canvas.width || 600;
+      const height = canvas.height || 400;
+      const cols = 5;
+      const rows = 4;
+
+      const paddingX = width * 0.12;
+      const paddingY = height * 0.15;
+      const spacingX = (width - paddingX * 2) / (cols - 1);
+      const spacingY = (height - paddingY * 2) / (rows - 1);
+
+      let id = 0;
+      // Grid of nodes with subtle random jitter
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const jitterX = (Math.random() - 0.5) * spacingX * 0.35;
+          const jitterY = (Math.random() - 0.5) * spacingY * 0.35;
+          nodes.push({
+            id: id++,
+            row: r,
+            col: c,
+            x: paddingX + c * spacingX + jitterX,
+            y: paddingY + r * spacingY + jitterY,
+            neighbors: []
+          });
+        }
+      }
+
+      // Create horizontal and vertical edges + some diagonals
+      nodes.forEach(node => {
+        nodes.forEach(other => {
+          if (node.id >= other.id) return;
+          const dr = Math.abs(node.row - other.row);
+          const dc = Math.abs(node.col - other.col);
+
+          if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1) || (dr === 1 && dc === 1 && Math.random() < 0.3)) {
+            edges.push({ u: node.id, v: other.id });
+            node.neighbors.push(other.id);
+            other.neighbors.push(node.id);
+          }
+        });
+      });
+
+      // Start = Top Left, Target = Bottom Right
+      startNode = nodes[0];
+      targetNode = nodes[nodes.length - 1];
+
+      // Calculate euclidean distance heuristics
+      nodes.forEach(node => {
+        node.h = Math.hypot(targetNode.x - node.x, targetNode.y - node.y);
+      });
+
+      resetSearchState();
+      draw();
+    }
+
+    // --- SEARCH STATE RESET ---
+    function resetSearchState() {
+      if (animationTimer) clearInterval(animationTimer);
+      isRunning = false;
+      isFinished = false;
+      visited.clear();
+      parentMap.clear();
+      finalPath = [];
+      stepCount = 0;
+      const log = document.getElementById('executionLog'); if(log) log.textContent='Ready to start animation...';
+
+      queueOrStack = startNode ? [startNode.id] : [];
+      if (startNode) parentMap.set(startNode.id, null);
+
+      btnPlay.innerHTML = `<i class="fa-solid fa-play"></i> Play`;
+      metricVisited.textContent = "0";
+      metricSteps.textContent = "0";
+      statusText.textContent = "Ready to start animation";
+      draw();
+    }
+
+    // --- ALGORITHM STEP LOGIC ---
+    function stepSearch() {
+      if (isFinished || queueOrStack.length === 0) return;
+
+      stepCount++;
+      const log = document.getElementById('executionLog');
+      if (log) { const entry=document.createElement('div');entry.textContent=`[Step ${stepCount}] Exploring frontier (${queueOrStack.length} queued)`;log.appendChild(entry);log.scrollTop=log.scrollHeight; }
+
+      metricSteps.textContent = stepCount;
+
+      let currentId;
+
+      if (algorithmVariant === 'bfs') {
+        currentId = queueOrStack.shift();
+      } else if (algorithmVariant === 'dfs') {
+        currentId = queueOrStack.pop();
+      } else if (algorithmVariant === 'hill') {
+        // Hill Climbing: Pick unvisited neighbor closest to goal
+        currentId = queueOrStack.shift();
+      } else if (algorithmVariant === 'astar') {
+        // Greedy / A*: Sort by distance to goal (heuristic)
+        queueOrStack.sort((a, b) => nodes[a].h - nodes[b].h);
+        currentId = queueOrStack.shift();
+      }
+
+      if (visited.has(currentId)) {
+        if (queueOrStack.length > 0) stepSearch();
+        return;
+      }
+
+      visited.add(currentId);
+      metricVisited.textContent = visited.size;
+
+      if (currentId === targetNode.id) {
+        // Reconstruct path
+        isFinished = true;
+        let curr = targetNode.id;
+        while (curr !== null) {
+          finalPath.unshift(curr);
+          curr = parentMap.get(curr);
+        }
+        statusText.textContent = `Goal reached in ${visited.size} node visits!`;
+        if (animationTimer) clearInterval(animationTimer);
+        isRunning = false;
+        btnPlay.innerHTML = `<i class="fa-solid fa-play"></i> Play`;
+        draw();
+        return;
+      }
+
+      const currNode = nodes[currentId];
+
+      if (algorithmVariant === 'hill') {
+        // Greedy step: filter unvisited neighbors and pick the best strictly lower heuristic
+        let bestNeighbor = null;
+        let minH = currNode.h;
+
+        currNode.neighbors.forEach(neighborId => {
+          if (!visited.has(neighborId)) {
+            const neighbor = nodes[neighborId];
+            if (neighbor.h < minH) {
+              minH = neighbor.h;
+              bestNeighbor = neighborId;
+            }
+          }
+        });
+
+        if (bestNeighbor !== null) {
+          parentMap.set(bestNeighbor, currentId);
+          queueOrStack = [bestNeighbor]; // Walk straight down best path
+        }
+      } else {
+        // Standard BFS / DFS / A* neighbor expansion
+        currNode.neighbors.forEach(neighborId => {
+          if (!visited.has(neighborId) && !queueOrStack.includes(neighborId)) {
+            parentMap.set(neighborId, currentId);
+            queueOrStack.push(neighborId);
+          }
+        });
+      }
+
+      if (queueOrStack.length === 0 && !isFinished) {
+        isFinished = true;
+        statusText.textContent = "Path blocked / Target unreachable";
+        if (animationTimer) clearInterval(animationTimer);
+        isRunning = false;
+      }
+
+      draw();
+    }
+
+    // --- DRAW GRAPH ---
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('currentAlgorithm').textContent = algorithmType === 'blind' ? 'Blind Search' : 'Heuristic Search';
+      document.getElementById('currentVariant').textContent = algorithmVariant.toUpperCase();
+      document.getElementById('currentSpeed').textContent = speedVal.textContent;
+
+
+      // Draw Edges
+      edges.forEach(edge => {
+        const u = nodes[edge.u];
+        const v = nodes[edge.v];
+        
+        const isPathEdge = finalPath.length > 1 && 
+          finalPath.some((id, idx) => idx > 0 && 
+            ((finalPath[idx-1] === u.id && id === v.id) || (finalPath[idx-1] === v.id && id === u.id)));
+
+        ctx.beginPath();
+        ctx.moveTo(u.x, u.y);
+        ctx.lineTo(v.x, v.y);
+        ctx.lineWidth = isPathEdge ? 4 : 2;
+        ctx.strokeStyle = isPathEdge ? '#e36fae' : '#e0cbe3';
+        ctx.stroke();
+      });
+
+      // Draw Nodes
+      nodes.forEach(node => {
+        const isStart = node.id === startNode.id;
+        const isTarget = node.id === targetNode.id;
+        const isVisited = visited.has(node.id);
+        const isFrontier = queueOrStack.includes(node.id);
+        const isPath = finalPath.includes(node.id);
+
+        let fillColor = '#c6b1f4'; // Unexplored
+        let borderColor = '#b69cd9';
+        let radius = 18;
+
+        if (isVisited) {
+          fillColor = '#93b5fa'; // Visited
+          borderColor = '#7c9fe7';
+        }
+        if (isFrontier) {
+          fillColor = '#ffc18b'; // Frontier
+          borderColor = '#ffdbb6';
+        }
+        if (isPath) {
+          fillColor = '#e36fae'; // Final Path
+          borderColor = '#f6a8d1';
+          radius = 20;
+        }
+        if (isStart) {
+          fillColor = '#64bf91';
+          borderColor = '#b6e8ca';
+        }
+        if (isTarget) {
+          fillColor = '#e36fae';
+          borderColor = '#ffc0cf';
+        }
+
+        // Outer Glow for Start / Target / Current
+        if (isTarget || isStart || isPath) {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, radius + 6, 0, Math.PI * 2);
+          ctx.fillStyle = isTarget || isPath ? 'rgba(16, 185, 129, 0.25)' : 'rgba(37, 99, 235, 0.25)';
+          ctx.fill();
+        }
+
+        // Node Circle
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = borderColor;
+        ctx.stroke();
+
+        // Label / Text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px Space Grotesk';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        if (isStart) {
+          ctx.fillText("S", node.x, node.y);
+        } else if (isTarget) {
+          ctx.fillText("G", node.x, node.y);
+        } else if (algorithmType === 'heuristic') {
+          // Show Heuristic Distance (h) on heuristic mode
+          ctx.fillText(Math.round(node.h / 10), node.x, node.y);
+        } else {
+          ctx.fillText(node.id, node.x, node.y);
+        }
+      });
+    }
+
+    // --- EVENT HANDLERS ---
+    btnBlind.addEventListener('click', () => {
+      algorithmType = 'blind';
+      btnBlind.className = 'py-2.5 px-3 rounded-lg text-sm font-bold transition-all bg-slate-800 text-white shadow-sm flex items-center justify-center gap-2';
+      btnHeuristic.className = 'py-2.5 px-3 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2';
+      
+      algVariant.innerHTML = `
+        <option value="bfs">Breadth-First Search (BFS) - Layer by Layer</option>
+        <option value="dfs">Depth-First Search (DFS) - Deep Path First</option>
+      `;
+      algorithmVariant = 'bfs';
+      modeBadge.textContent = "Blind Search Mode";
+      modeBadge.className = "bg-blue-900/80 text-blue-300 border border-blue-700/50 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider";
+      strategyExplanation.innerHTML = `<b>Blind Search:</b> Explores nodes blindly without knowing target distance. Explores every path systematically.`;
+      resetSearchState();
+    });
+
+    btnHeuristic.addEventListener('click', () => {
+      algorithmType = 'heuristic';
+      btnHeuristic.className = 'py-2.5 px-3 rounded-lg text-sm font-bold transition-all bg-amber-500 text-slate-950 font-bold shadow-sm flex items-center justify-center gap-2';
+      btnBlind.className = 'py-2.5 px-3 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white flex items-center justify-center gap-2';
+      
+      algVariant.innerHTML = `
+        <option value="astar">A* / Greedy Best-First - Distance Guided</option>
+        <option value="hill">Hill Climbing - Stepping Toward Target</option>
+      `;
+      algorithmVariant = 'astar';
+      modeBadge.textContent = "Heuristic Search Mode";
+      modeBadge.className = "bg-amber-900/80 text-amber-300 border border-amber-700/50 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider";
+      strategyExplanation.innerHTML = `<b>Heuristic Search:</b> Uses estimation numbers (h) to head directly toward the goal node, skipping unnecessary branches.`;
+      resetSearchState();
+    });
+
+    algVariant.addEventListener('change', (e) => {
+      algorithmVariant = e.target.value;
+      resetSearchState();
+    });
+
+    btnPlay.addEventListener('click', () => {
+      if (isFinished) resetSearchState();
+
+      if (isRunning) {
+        clearInterval(animationTimer);
+        isRunning = false;
+        btnPlay.innerHTML = `<i class="fa-solid fa-play"></i> Play`;
+        statusText.textContent = "Paused";
+      } else {
+        isRunning = true;
+        btnPlay.innerHTML = `<i class="fa-solid fa-pause"></i> Pause`;
+        statusText.textContent = "Running algorithm execution...";
+        const interval = 850 - parseInt(speedSlider.value);
+        animationTimer = setInterval(stepSearch, interval);
+      }
+    });
+
+    btnStep.addEventListener('click', () => {
+      if (isRunning) {
+        clearInterval(animationTimer);
+        isRunning = false;
+        btnPlay.innerHTML = `<i class="fa-solid fa-play"></i> Play`;
+      }
+      stepSearch();
+    });
+
+    btnReset.addEventListener('click', resetSearchState);
+    btnNewGraph.addEventListener('click', () => { generateGraph(); draw(); });
+
+    speedSlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value);
+      if (val < 250) speedVal.textContent = "Slow";
+      else if (val < 550) speedVal.textContent = "Medium";
+      else speedVal.textContent = "Fast";
+
+      if (isRunning) {
+        clearInterval(animationTimer);
+        animationTimer = setInterval(stepSearch, 850 - val);
+      }
+    });
+
+    // --- ANIMATED EXPORTS ---
+    // Exports replay the selected algorithm from the beginning, keeping the same graph.
+    let exporting = false;
+    const exportGifBtn = document.getElementById('exportGifBtn');
+    const exportVideoBtn = document.getElementById('exportVideoBtn');
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    function exportDelay() {
+      return Math.max(100, 850 - Number(speedSlider.value));
+    }
+
+    function beginExport(kind) {
+      if (exporting) return false;
+      exporting = true;
+      if (animationTimer) clearInterval(animationTimer);
+      resetSearchState();
+      exportGifBtn.disabled = true;
+      exportVideoBtn.disabled = true;
+      document.querySelectorAll('#btnBlind,#btnHeuristic,#algVariant,#btnPlay,#btnStep,#btnReset,#btnNewGraph,#speedSlider,#exportSvgBtn').forEach(el => el.disabled = true);
+      statusText.textContent = `Recording ${kind}...`;
+      return true;
+    }
+
+    function endExport(message) {
+      exporting = false;
+      document.querySelectorAll('#btnBlind,#btnHeuristic,#algVariant,#btnPlay,#btnStep,#btnReset,#btnNewGraph,#speedSlider,#exportSvgBtn,#exportGifBtn,#exportVideoBtn').forEach(el => el.disabled = false);
+      statusText.textContent = message;
+    }
+
+    async function replayFrames(onFrame, delay) {
+      draw();
+      await onFrame();
+      const limit = Math.max(100, nodes.length * 5);
+      for (let i = 0; i < limit && !isFinished; i++) {
+        stepSearch();
+        await onFrame();
+        if (!isFinished && queueOrStack.length === 0) break;
+      }
+      await wait(delay * 2);
+    }
+
+    exportVideoBtn.addEventListener('click', async () => {
+      if (!window.MediaRecorder || !canvas.captureStream) {
+        statusText.textContent = 'Video export is not supported in this browser. Try Chrome or Firefox.';
+        return;
+      }
+      const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+        .find(type => MediaRecorder.isTypeSupported(type));
+      if (!mime) {
+        statusText.textContent = 'This browser does not support WebM recording.';
+        return;
+      }
+      if (!beginExport('video')) return;
+      let stream, recorder;
+      try {
+        const delay = exportDelay();
+        stream = canvas.captureStream(30);
+        const chunks = [];
+        recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2500000 });
+        const stopped = new Promise((resolve, reject) => {
+          recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+          recorder.onerror = e => reject(e.error || new Error('Recording failed'));
+          recorder.onstop = resolve;
+        });
+        recorder.start();
+        await wait(250);
+        await replayFrames(async () => { await wait(delay); }, delay);
+        recorder.stop();
+        await stopped;
+        if (!chunks.length) throw new Error('The browser did not produce video frames');
+        downloadBlob(new Blob(chunks, { type: mime }), `search_${algorithmVariant}.webm`);
+        endExport('Video exported successfully (.webm)');
+      } catch (err) {
+        if (recorder && recorder.state !== 'inactive') recorder.stop();
+        endExport(`Video export error: ${err.message}`);
+      } finally {
+        if (stream) stream.getTracks().forEach(track => track.stop());
+      }
+    });
+
+    // GIF encoding is loaded only when requested; this requires internet access.
+    async function loadGifEncoder() {
+      if (window.GIF) return;
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Could not load GIF encoder. Check internet connection.'));
+        document.head.appendChild(script);
+      });
+    }
+
+    exportGifBtn.addEventListener('click', async () => {
+      if (!beginExport('GIF')) return;
+      let workerUrl;
+      try {
+        await loadGifEncoder();
+        const workerResponse = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+        if (!workerResponse.ok) throw new Error('Could not load GIF worker');
+        workerUrl = URL.createObjectURL(new Blob([await workerResponse.text()], { type: 'text/javascript' }));
+        const delay = exportDelay();
+        const gif = new GIF({ workers: 2, quality: 10, width: canvas.width, height: canvas.height, workerScript: workerUrl, background: '#020617' });
+        await replayFrames(async () => { gif.addFrame(canvas, { copy: true, delay }); }, delay);
+        statusText.textContent = 'Encoding GIF...';
+        const result = await new Promise((resolve, reject) => {
+          gif.on('finished', resolve);
+          gif.on('abort', () => reject(new Error('GIF encoding aborted')));
+          gif.render();
+        });
+        downloadBlob(result, `search_${algorithmVariant}.gif`);
+        endExport('GIF exported successfully');
+      } catch (err) {
+        endExport(`GIF export error: ${err.message}`);
+      } finally {
+        if (workerUrl) setTimeout(() => URL.revokeObjectURL(workerUrl), 1500);
+      }
+    });
+
+    // --- SVG EXPORT GENERATOR ---
+    document.getElementById('exportSvgBtn').addEventListener('click', () => {
+      const svgWidth = canvas.width;
+      const svgHeight = canvas.height;
+
+      let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}">\n`;
+      svgContent += `  <rect width="100%" height="100%" fill="#fffafd" />\n`;
+
+      // Edges
+      edges.forEach(edge => {
+        const u = nodes[edge.u];
+        const v = nodes[edge.v];
+        const isPathEdge = finalPath.length > 1 && 
+          finalPath.some((id, idx) => idx > 0 && 
+            ((finalPath[idx-1] === u.id && id === v.id) || (finalPath[idx-1] === v.id && id === u.id)));
+
+        const stroke = isPathEdge ? '#10b981' : '#334155';
+        const width = isPathEdge ? '4' : '2';
+        svgContent += `  <line x1="${u.x}" y1="${u.y}" x2="${v.x}" y2="${v.y}" stroke="${stroke}" stroke-width="${width}" />\n`;
+      });
+
+      // Nodes
+      nodes.forEach(node => {
+        const isStart = node.id === startNode.id;
+        const isTarget = node.id === targetNode.id;
+        const isVisited = visited.has(node.id);
+        const isPath = finalPath.includes(node.id);
+
+        let fill = '#1e293b';
+        let stroke = '#475569';
+        if (isVisited) { fill = '#3b82f6'; stroke = '#60a5fa'; }
+        if (isPath) { fill = '#10b981'; stroke = '#6ee7b7'; }
+        if (isStart) { fill = '#2563eb'; stroke = '#93c5fd'; }
+        if (isTarget) { fill = '#10b981'; stroke = '#a7f3d0'; }
+
+        svgContent += `  <circle cx="${node.x}" cy="${node.y}" r="18" fill="${fill}" stroke="${stroke}" stroke-width="3" />\n`;
+        svgContent += `  <text x="${node.x}" y="${node.y + 4}" fill="#ffffff" font-size="12" font-family="sans-serif" font-weight="bold" text-anchor="middle">${isStart ? 'S' : isTarget ? 'G' : node.id}</text>\n`;
+      });
+
+      svgContent += `</svg>`;
+
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `search_strategy_${algorithmType}.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // --- DOWNLOAD FULL HTML ---
+    document.getElementById('downloadHtmlBtn').addEventListener('click', () => {
+      const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'AI_Search_Strategies_Visualizer.html';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // --- INITIAL RENDER ---
+    setTimeout(() => {
+      resizeCanvas();
+    }, 100);
+
+  </script>
+</body>
+</html>
